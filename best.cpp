@@ -86,10 +86,7 @@ class IdleState : State<StateMachine<TransitionMap, RunState, IdleState>>
 public:
 	/* Use parent constructor */
 	using State<StateMachine<TransitionMap, RunState, IdleState>>::State;
-	void process() override
-	{
-		std::cout << "IDLE" << std::endl;
-	}
+	void process() override;
 };
 
 class RunState : State<StateMachine<TransitionMap, RunState, IdleState>>
@@ -97,22 +94,32 @@ class RunState : State<StateMachine<TransitionMap, RunState, IdleState>>
 public:
 	/* Use parent constructor */
 	using State<StateMachine<TransitionMap, RunState, IdleState>>::State;
-	void process() override
-	{
-		std::cout << "RUN" << std::endl;
-		std::cout << "Actually switch to IDLE here" << std::endl;
-		//state_machine_->setState<IdleState>();
-		//state_machine_->setState<TransitionMap<RunState, StopEvent>::type>();
-		state_machine_->emitEvent<RunState>(StopEvent{});
-	}
+	void process() override;
 };
+
+void IdleState::process()
+{
+	std::cout << "IDLE" << std::endl;
+	state_machine_->emitEvent<IdleState>(StartEvent{});
+}
+
+void RunState::process()
+{
+	std::cout << "RUN" << std::endl;
+	state_machine_->emitEvent<RunState>(StopEvent{});
+}
 
 } // namespace impl
 
 int main()
 {
 	StateMachine<impl::TransitionMap, impl::RunState, impl::IdleState> sm;
-	sm.process();
-	sm.process();
+	/* We start in RunState and RunState emits event inside it's process()
+	 * function that will switch to the IdleState */
+	sm.process(); // stdout: RUN
+	
+	/* Idle does not emit any events so we will stay in that state */
+	sm.process(); // stdout: IDLE
+	sm.process(); // stdout: IDLE
 	return 0;
 }
